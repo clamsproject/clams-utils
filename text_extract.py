@@ -1,33 +1,40 @@
 import json
-import os
+import pathlib
+import re
+
+import dirs
+
+suffix = '-transcript'
 
 
-gold_dir = '.'
-gold_texts = os.listdir(gold_dir)
+def extract_text(gbh_json_dir):
+    for j in pathlib.Path(gbh_json_dir).glob('*.json'):
+        guid = j.name.split('.')[0][:len(suffix) * -1]
+        if guid in dirs.exclude_guid:
+            continue
+        with open(j, 'r') as f:
+            data = json.load(f)
+        # print(guid, data.keys())
 
-for gold_text in gold_texts:
-	if gold_text.endswith('.json'):
-		id = gold_text.split('.')[0]
-		# print(id)
+        sentences = []
+        # if data['parts']:
+        for i in range(len(data['parts'])):
+            sentences.append(data['parts'][i]['text'])
 
-		with open (gold_text, 'r') as f:
-			data = json.load(f)
+        text = ' '.join(sentences)
 
-		sentences = []
-		# if data['parts']:
-		for i in range(len(data['parts'])):
-			sentences.append(data['parts'][i]['text'])
+        dirs.gold_texts_dir.mkdir(parents=True, exist_ok=True)
+        with (open(dirs.gold_texts_dir / f'{guid}{suffix}.txt', 'w', encoding='utf-8') as txt):
+            txt.write(re.sub("[\<\[].*?[\>\]]", "", text))
+            # txt.close()
+        # else:
+        # 	for i in range(len(data['phrases'])):
+        # 		sentences.append(data['phrases'][i]['text'])
 
-		text = ' '.join(sentences)
+        # 	text = ' '.join(sentences)
 
-		with open ('./gold_texts/'+id+'.txt', 'w', encoding='utf-8') as txt:
-  			txt.write(text)
-  			# txt.close()
-		# else:
-		# 	for i in range(len(data['phrases'])):
-		# 		sentences.append(data['phrases'][i]['text'])
-
-		# 	text = ' '.join(sentences)
-
-		# 	with open ('./gold_texts/'+id+'.txt', 'w', encoding='utf-8') as txt:
-  		# 		txt.write(text)
+        # 	with open ('./gold_texts/'+id+'.txt', 'w', encoding='utf-8') as txt:
+        # 		txt.write(text)
+    
+if __name__ == '__main__':
+    extract_text(dirs.gold_jsons_dir)
