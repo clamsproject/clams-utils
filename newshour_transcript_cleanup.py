@@ -25,7 +25,7 @@ def extract_text(gbh_json_dir):
         text = ' '.join(sentences)
 
         dirs.gold_texts_dir.mkdir(parents=True, exist_ok=True)
-        with (open(dirs.gold_texts_dir / f'{guid}{suffix}.txt', 'w', encoding='utf-8') as txt):
+        with (open(dirs.gold_texts_dir / f'{guid}.txt', 'w', encoding='utf-8') as txt):
             # exising regex
             text = re.sub("[\<\[].*?[\>\]](: )?", "", text)
             # new regex to remove parens
@@ -34,15 +34,6 @@ def extract_text(gbh_json_dir):
             text = re.sub("^[:. ]+", "", text)
 
             txt.write(text)
-            # txt.close()
-        # else:
-        # 	for i in range(len(data['phrases'])):
-        # 		sentences.append(data['phrases'][i]['text'])
-
-        # 	text = ' '.join(sentences)
-
-        # 	with open ('./gold_texts/'+id+'.txt', 'w', encoding='utf-8') as txt:
-        # 		txt.write(text)
     
 if __name__ == '__main__':
     extract_text(dirs.gold_jsons_dir)
