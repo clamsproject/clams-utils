@@ -3,6 +3,7 @@ import json
 import argparse
 import os
 
+GUID = 'cpb-aacip' # The `id` should be only the AAPB “GUID”, which always start with 'cpb-aacip'.
 
 def read_mmif(mmif_file: str) -> mmif.Mmif:
     """
@@ -70,17 +71,27 @@ def get_id_lang_from_mmif(mmif_obj: mmif.Mmif) -> tuple[str, str]:  ## location?
     """
     lang = None
     for doc in mmif_obj.documents:
-        id = doc.properties.location
+        file_name = os.path.basename(doc.properties.location)
+        file_name, _ = os.path.splitext(file_name)
+        assert GUID in file_name, "Missing GUID in document file name in the mmif file"
+
+        first_occurrence_index = set((file_name.find('.'), file_name.find('_'), file_name.find(' ')))
+
+        if max(first_occurrence_index) == -1:
+            # If none of ".", "_", or whitespace found, id would be the whole string
+            id = file_name
+        else:
+            # Otherwise, return the substring up to the first occurrence
+            first_occurrence_index.remove(-1)
+            id = file_name[:min(first_occurrence_index)]
+
+
     for view in mmif_obj.views:
         for annotation in view.annotations:
             if "TextDocument" in str(annotation.at_type):
                 lang = annotation.get_property("text")._language
 
-    if lang == "en":
-        return id, "en-US"
-
-    else:
-        return id, lang
+    return id, lang
 
 
 def create_AAPB_json(id:str, lang:str, parts:list[dict], file_path:str, pretty=True):
