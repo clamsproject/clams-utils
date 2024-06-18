@@ -23,7 +23,7 @@ def download_golds(gold_dir_url=None, folder_name=None):
         raise Exception("The folder '" + folder_name + "' already exists and is not empty")
 
     # Send a GET request to the repository URL and extract the HTML content
-    response = requests.get(gold_dir_url)
+    response = requests.get(gold_dir_url, headers={"Accept": "application/json"})
 
     # github responses with JSON? wow
     payload = json.loads(response.text)['payload']
