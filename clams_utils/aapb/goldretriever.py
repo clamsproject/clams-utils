@@ -24,9 +24,12 @@ def download_golds(gold_dir_url=None, folder_name=None):
 
     # Send a GET request to the repository URL and extract the HTML content
     response = requests.get(gold_dir_url, headers={"Accept": "application/json"})
+    try:
+        # github responses with JSON? wow
+        payload = json.loads(response.text)['payload']
+    except JSONDecodeError:
+        raise Exception(f"Failed to load the directory URL: {gold_dir_url} . As the gold retriever relies on an undocumented API endpoint of GitHub, it may be broken. Please report this issue to the developers at https://github.com/clamsproject/clams-utils/issues .")
 
-    # github responses with JSON? wow
-    payload = json.loads(response.text)['payload']
     links = [i['path'] for i in payload['tree']['items']]
 
     # Download each file in the links list into the created folder
