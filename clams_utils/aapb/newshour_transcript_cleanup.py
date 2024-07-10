@@ -15,9 +15,11 @@ def extract_text_from_json(transcript_json):
     except KeyError:
         text = None
     return text
-def extract_text_from_plain_text(transcript_text):
+def clean_transcript_text(transcript_text):
     """
-    Given a plain text read from a txt file, extract texts by removing speakers' names
+    Given a plain text read from a txt file,
+    extract texts by removing unspoken words,
+    including speakers' names, descriptions in brackets, and news section titles
     """
     titles_removed = clean_titles(transcript_text)
     brackets_removed = clean_brackets(titles_removed)
@@ -26,7 +28,7 @@ def extract_text_from_plain_text(transcript_text):
 
 def clean_titles(transcript_text):
     """
-    Given a plain text read from a txt file, clean the titles in the transcript,
+    Given a plain text read from a txt file, clean the news section titles in the transcript,
     including "Focus", "Intro", and "News Summary"
     """
     focus = r'^FOCUS-.*\n'
@@ -93,32 +95,40 @@ def is_json(in_file):
     else:
         return False
 
-def extract_text(in_file, out_file):
+def clean_transcript(dirty_transcript_file):
     """
-    Given an input file, extract the text from the file, and write it to an output file.
+    Given an input dirty transcript file (.txt or .json),
+    cleans the transcript.
+    Returns the extracted/cleaned text.
     """
-    if is_json(in_file):
-        with open(in_file, 'r') as f:
+    if is_json(dirty_transcript_file):
+        with open(dirty_transcript_file, 'r') as f:
             text = f.read()
             transcript_json = json.loads(text)
         text = extract_text_from_json(transcript_json)
     else:
-        with open(in_file, 'r') as f:
+        with open(dirty_transcript_file, 'r') as f:
             transcript_text = f.read()
-        text = extract_text_from_plain_text("\n" + transcript_text)
-    if text is not None:
-        with open(out_file, 'w') as f:
-            f.write(text)
+        text = clean_transcript_text("\n" + transcript_text)
 
-def clean(transcript_path, cleaned_transcript_path):
+    return text
+
+def cleaned_transcripts_generator(dirty_transcript_path, cleaned_transcript_path):
+    """
+    Given a directory with all dirty transcrpits,
+    cleans all the transcripts, and store the cleaned files into a new directory
+    """
     if not os.path.exists(cleaned_transcript_path):
         os.makedirs(cleaned_transcript_path)
-    for file in os.listdir(transcript_path):
-        in_file = os.path.join(transcript_path, file)
+    for file in os.listdir(dirty_transcript_path):
+        in_file = os.path.join(dirty_transcript_path, file)
         if file.endswith(".txt"):
             out_file = os.path.join(cleaned_transcript_path, file)
         elif file.endswith(".json"):
             out_file = os.path.join(cleaned_transcript_path, file.replace(".json", ".txt"))
         else:
             continue
-        extract_text(in_file, out_file)
+        text = clean_transcript(in_file)
+        if text is not None:
+            with open(out_file, 'w') as f:
+                f.write(text)
