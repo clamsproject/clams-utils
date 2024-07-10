@@ -1,5 +1,4 @@
 import json
-import os
 import re
 
 
@@ -118,22 +117,20 @@ def file_cleaner(dirty_transcript_file):
     return text
 
 
-def clean_and_write(dirty_transcript_path, cleaned_transcript_path):
+def clean_and_write(indir, outdir):
     """
     Given a directory with all dirty transcripts,
     cleans all the transcripts, and store the cleaned files into a new directory
     """
-    if not os.path.exists(cleaned_transcript_path):
-        os.makedirs(cleaned_transcript_path)
-    for file in os.listdir(dirty_transcript_path):
-        in_file = os.path.join(dirty_transcript_path, file)
-        if file.endswith(".txt"):
-            out_file = os.path.join(cleaned_transcript_path, file)
-        elif file.endswith(".json"):
-            out_file = os.path.join(cleaned_transcript_path, file.replace(".json", ".txt"))
-        else:
+    from pathlib import Path
+    indir = Path(indir).expanduser()
+    outdir = Path(outdir).expanduser()
+    outdir.mkdir(parents=True, exist_ok=True)
+    for in_file in indir.glob("*"):
+        if in_file.suffix not in (".json", ".txt"):
             continue
-        text = file_cleaner(in_file)
+        out_file = outdir / in_file.with_suffix(".txt").name
+        text = file_cleaner(str(in_file))
         if text is not None:
             with open(out_file, 'w') as f:
                 f.write(text)
