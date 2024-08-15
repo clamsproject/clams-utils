@@ -36,7 +36,8 @@ def get_parts_from_mmif(mmif_obj: mmif.Mmif) -> list[dict[str, str]]:
         tmp_TF = []
         AAPB_dict = {}
         speaker_id = 1
-        if "whisper-wrapper" in view.metadata.app:
+
+        if "/whisper-wrapper/" in view.metadata.app:
             for annotation in view.annotations:
                 if "TimeFrame" in str(annotation.at_type):
                     tmp_TF.append((annotation.get_property("start"), annotation.get_property("end")))
@@ -56,8 +57,23 @@ def get_parts_from_mmif(mmif_obj: mmif.Mmif) -> list[dict[str, str]]:
                         AAPB_dict = {}
                         speaker_id += 1
 
-                    except KeyError: # some empty sentence annotation in whisper-out mmif.
+                    except (KeyError, IndexError) as e: # some empty sentence annotation in whisper-out mmif.
                         print("Empty Sentence:", annotation.get_property("id"))
+        
+        else:
+            for annotation in view.annotations:
+                if "Alignment" in str(annotation.at_type):
+                    target = view.get_annotation_by_id(annotation.get_property("target"))
+                    if "Sentence" in str(target.at_type):
+                        tf = view.get_annotation_by_id(annotation.get_property("source"))
+                        AAPB_dict["start_time"] = str(tf.get_property("start"))
+                        AAPB_dict["end_time"] = str(tf.get_property("end"))
+                        AAPB_dict["text"] = target.get_property("text")
+                        AAPB_dict["speaker_id"] = speaker_id
+                    
+                        parts.append(AAPB_dict)
+                        AAPB_dict = {}
+                        speaker_id += 1
 
     return parts
 
@@ -123,15 +139,32 @@ def create_AAPB_json(id:str, lang:str, parts:list[dict], file_path:str, pretty=T
             json.dump(AAPB_dict, json_file)
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Convert MMIF -> AAPB-JSON.")
-    parser.add_argument("mmif_file", help="Path to the MMIF file")
-    parser.add_argument("-o", '--output', default="converted.json", type=str,
-                        help="Path to the converted AAPB-JSON output file (default: converted.json)")
-    parser.add_argument("-p", '--pretty', default=True, type=bool, help="Pretty print (default: pretty=True)")
-    args = parser.parse_args()
-
-    mmif_obj = read_mmif(args.mmif_file)
+def convert_aapbjson(mmif_file, output="converted.json", pretty=True):
+    """
+    Give a mmif file and convert it into aapb json file
+    """
+    mmif_obj = read_mmif(mmif_file)
     parts = get_parts_from_mmif(mmif_obj)
     id, lang = get_id_lang_from_mmif(mmif_obj)
-    create_AAPB_json(id, lang, parts, args.output, args.pretty)
+    create_AAPB_json(id, lang, parts, output, pretty)
+
+def main():
+    parser = argparse.ArgumentParser(description="Convert MMIF <-> AAPB-JSON.")
+    subparsers = parser.add_subparsers(dest='command', help='Subcommands')
+    convert_parser = subparsers.add_parser('convert', help='Convert MMIF <-> AAPB-JSON')
+    convert_parser.add_argument('--from-mmif', action='store_true', help='Specify the format')
+    convert_parser.add_argument('-i', '--input', type=str, required=True, help='Input file')
+    convert_parser.add_argument("-o", '--output', default="converted.json", type=str,
+                        help="Path to the converted AAPB-JSON output file (default: converted.json)")
+    convert_parser.add_argument("-p", '--pretty', default=True, type=bool, help="Pretty print (default: pretty=True)")
+    args = parser.parse_args()
+
+    if args.command == 'convert':
+        if args.input:
+            mmif_obj = read_mmif(args.input)
+            parts = get_parts_from_mmif(mmif_obj)
+            id, lang = get_id_lang_from_mmif(mmif_obj)
+            create_AAPB_json(id, lang, parts, args.output, args.pretty)
+
+if __name__ == "__main__":
+    main()
