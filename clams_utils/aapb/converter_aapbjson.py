@@ -138,16 +138,6 @@ def create_AAPB_json(id:str, lang:str, parts:list[dict], file_path:str, pretty=T
         else:
             json.dump(AAPB_dict, json_file)
 
-
-def convert_aapbjson(mmif_file, output="converted.json", pretty=True):
-    """
-    Give a mmif file and convert it into aapb json file
-    """
-    mmif_obj = read_mmif(mmif_file)
-    parts = get_parts_from_mmif(mmif_obj)
-    id, lang = get_id_lang_from_mmif(mmif_obj)
-    create_AAPB_json(id, lang, parts, output, pretty)
-
 def main():
     parser = argparse.ArgumentParser(description="Convert MMIF <-> AAPB-JSON.")
     subparsers = parser.add_subparsers(dest='command', help='Subcommands')
