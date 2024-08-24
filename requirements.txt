@@ -1,3 +1,0 @@
-requests
-mmif-python>=1.0.19
-lapps

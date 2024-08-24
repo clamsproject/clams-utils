@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools", "setuptools-git-versioning<2"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools-git-versioning]
+enabled = true
+
+[project]
+name = "clams-utils"
+description = "a collection of smaller helper/utility code of CLAMS platform"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+authors = [{name = "Brandeis Lab for Linguistics and Computation", email = "admin@clams.ai"}]
+dependencies = [
+    "requests",
+    "lapps",
+    "mmif-python",
+]
+dynamic = ["version"]
+
+[project.scripts]
+clams-aapb = "clams_utils.aapb.converter_aapbjson:main"
