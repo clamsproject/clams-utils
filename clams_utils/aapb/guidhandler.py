@@ -15,8 +15,18 @@ def get_aapb_guid_from(s: Optional[str]) -> Optional[str]:
     if s is None:
         return None
     m = re.search(r'(cpb-aacip[-_][a-z0-9-]+).', s)
+    
     if m is None:
         return m
     else:
-        return m.group(1)
+        m_str = m.group(1)
+        m_parts = list(reversed(re.split(r'[-_]', m_str)))
+        cur = 0
+        for part in m_parts:
+            if part.isalpha():  # all alphabets means some meaningful suffix (like `-transcript`)
+                cur += 1 
+            else:
+                break
+        num_guid_chars = len(' '.join(m_parts[cur:]))
+        return m_str[:num_guid_chars]
 
