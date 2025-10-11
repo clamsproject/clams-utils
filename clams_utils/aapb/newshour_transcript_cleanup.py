@@ -166,3 +166,27 @@ def clean_and_write(indir, outdir):
         if text is not None:
             with open(out_file, 'w') as f:
                 f.write(text)
+
+
+CMD_NAME = 'cleanup'
+
+
+def prep_argparser(subparsers):
+    """
+    Prepare the argument parser for the cleanup command.
+    """
+    cleanup_parser = subparsers.add_parser(
+        CMD_NAME,
+        description="Clean a Newshour transcript file or a directory of files.",
+        help="Clean a Newshour transcript file or a directory of files."
+    )
+    cleanup_parser.add_argument("indir", help="input file or directory")
+    cleanup_parser.add_argument("outdir", help="output directory")
+    cleanup_parser.set_defaults(func=main)
+
+
+def main(args):
+    """
+    Main function for the cleanup command.
+    """
+    clean_and_write(args.indir, args.outdir)

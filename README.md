@@ -8,10 +8,11 @@ pip install clams-utils
 ```
 
 ## Usage
-At the moment, the package contains the following packages and modules:
 
-* `clams_utils.aapb`: package that contains helper functions for AAPB data
-    * `goldretriver`: downloader module for "gold" release data from [`aapb-annotation`](https://github.com/clamsproject/aapb-annotations) repository. 
+Currently, this package provides utilities for speicific tasks related to the American Archive of Public Broadcasting (AAPB) project via `clams_utils.aapb` subpackage. All utilities are accessible via the command line interface (CLI) or can be imported as Python modules. See help messages for more details on included utilities.
 
+``` bash
+clams-aapb --help
+```
 
 

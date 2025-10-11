@@ -30,3 +30,24 @@ def get_aapb_guid_from(s: Optional[str]) -> Optional[str]:
         num_guid_chars = len(' '.join(m_parts[cur:]))
         return m_str[:num_guid_chars]
 
+
+def prep_argparser(subparsers):
+    """
+    Prepare the argument parser for the guidhandler command.
+    """
+    guidhandler_parser = subparsers.add_parser(
+        __name__.split('.')[-1],
+        description="Extract an AAPB GUID from a string.",
+        help="Extract an AAPB GUID from a string."
+    )
+    guidhandler_parser.add_argument("string", help="input string to search for a GUID")
+    guidhandler_parser.set_defaults(func=main)
+
+
+def main(args):
+    """
+    Main function for the guidhandler command.
+    """
+    guid = get_aapb_guid_from(args.string)
+    if guid:
+        print(guid)

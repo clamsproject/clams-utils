@@ -1,7 +1,7 @@
 import argparse
+import sys
 import json
 import math
-import sys
 import typing
 
 import mmif
@@ -86,32 +86,40 @@ def convert_mmif_to_aapbjson(mmif_obj: mmif.Mmif, out_f: typing.IO, pretty=True)
             break
     if not done:
         raise ValueError("No ASR view found in the MMIF file.")
-    
-
-def main():
-    parser = argparse.ArgumentParser(description="Convert MMIF <-> AAPB-JSON.")
-    subparsers = parser.add_subparsers(dest='command', help='Subcommands')
-    convert_parser = subparsers.add_parser('convert', help='Convert MMIF <-> AAPB-JSON')
-    # TODO (krim @ 8/23/24): add the inverse conversion from AAPB-JSON to MMIF when the AAPB-JSON format is finalized. 
-    convert_parser.add_argument('--from-mmif', action='store_true', help='conversion direction')
-    convert_parser.add_argument('--to-mmif', action='store_true', help='conversion direction')
-    convert_parser.add_argument("-p", '--pretty', action='store_true', help="indent output json (default: False)")
-    convert_parser.add_argument("IN_FILE",
-                                nargs="?", type=argparse.FileType("r"),
-                                default=None if sys.stdin.isatty() else sys.stdin,
-                                help='input MMIF file path, or STDIN if `-` or not provided.')
-    convert_parser.add_argument("OUT_FILE",
-                                nargs="?", type=argparse.FileType("w"),
-                                default=sys.stdout,
-                                help='output MMIF file path, or STDOUT if `-` or not provided.')
-    args = parser.parse_args()
-    if args.command == 'convert':
-        # print(type(args.IN_FILE))
-        if args.to_mmif:
-            raise NotImplementedError("Conversion from AAPB-JSON to MMIF is not implemented yet.")
-        else:  # meaning, --from-mmif flag actually doesn't need to be specified anyway. It's just for clarity.
-            convert_mmif_to_aapbjson(mmif.Mmif(args.IN_FILE.read()), args.OUT_FILE, args.pretty)
 
 
-if __name__ == "__main__":
-    main()
+CMD_NAME = 'convert-json'
+
+
+def prep_argparser(subparsers):
+    """
+    Prepare the argument parser for the convert command.
+    """
+    convert_parser = subparsers.add_parser(
+        CMD_NAME,
+        description="Convert between MMIF and AAPB-JSON formats.",
+        help="Convert between MMIF and AAPB-JSON formats."
+    )
+    convert_group = convert_parser.add_mutually_exclusive_group(required=True)
+    convert_group.add_argument('--from-aapb', action='store_true', help='Convert from AAPB-JSON to MMIF (not implemented).')
+    convert_group.add_argument('--to-aapb', action='store_true', help='Convert from MMIF to AAPB-JSON.')
+    convert_parser.add_argument('IN_FILE', nargs='?', type=argparse.FileType('r'), default=sys.stdin, help="input file path, or STDIN if not provided")
+    convert_parser.add_argument('OUT_FILE', nargs='?', type=argparse.FileType('w'), default=sys.stdout, help="output file path, or STDOUT if not provided")
+    convert_parser.add_argument('-p', '--pretty', action='store_true', help="indent output json (default: False)")
+    convert_parser.set_defaults(func=main)
+
+
+def main(args):
+    """
+    Main function for the convert command.
+    """
+    if args.to_aapb:
+        try:
+            mmif_obj = mmif.Mmif(args.IN_FILE.read())
+            convert_mmif_to_aapbjson(mmif_obj, args.OUT_FILE, pretty=args.pretty)
+        except Exception as e:
+            print(e, file=sys.stderr)
+            sys.exit(1)
+    elif args.from_aapb:
+        print("Conversion from AAPB-JSON to MMIF is not implemented yet.", file=sys.stderr)
+        sys.exit(1)
