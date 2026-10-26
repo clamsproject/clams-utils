@@ -55,12 +55,13 @@ def download_batch_files(batch_dir_url: str, output_folder=None) -> str:
     batch_files = [
         item['path'] for item in payload['codeViewTreeRoute']['tree']['items']
         if item['path'].endswith('.txt')]
+    branch = payload['codeViewTreeRoute']['refInfo']['name']
 
     # Download each file in the list into the created folder
     for batch_file in batch_files:
         raw_url = urljoin(
             'https://raw.githubusercontent.com/',
-            str(Path('clamsproject') / 'aapb-annotations' / 'main' / batch_file))
+            str(Path('clamsproject') / 'aapb-annotations' / branch / batch_file))
         print('--', raw_url)
         file_name = os.path.basename(batch_file)
         file_path = os.path.join(output_folder, file_name)
