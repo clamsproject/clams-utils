@@ -2,7 +2,7 @@
 
 Downloader for "gold" release files from the aapb-annotation repository.
 
-This is somewhat fragile in that the code relies on an undocumented API endpoint
+This is somewhat fragile in that the code relies on undocumented API endpoints
 on GitHub.
 
 """
@@ -15,20 +15,31 @@ import requests
 import tempfile
 
 
-def download_golds(batch_dir_url, folder_name=None):
+def download_golds(gold_dir_url, folder_name=None):
     """
-    This function is here mostly so that code in other modules can keep calling
-    it without breaking. It now just forwards to a more properly named function
-    (proper relative to what it does). It should be considered deprecated.
+    Download gold files from the aapb-annotations repository and save them to a
+    local directory. If no output folder is given then the files are saved to a
+    temporary directory. Returns the name of the local directory.
     """
-    return download_batch_files(batch_dir_url, folder_name)
+    return download_files(gold_dir_url, folder_name)
 
 
-def download_batch_files(batch_dir_url: str, output_folder=None) -> str:
+def download_batches(gold_dir_url, folder_name=None):
     """
-    Download batch files from the aapb-annotations repository and save them to
-    a local directory. If no output folder is given then it saved to a temporary
-    directory. Returns the name of the local directory.
+    Download batch files from the aapb-annotations repository and save them to a
+    local directory. If no output folder is given then the files are saved to a
+    temporary directory. Returns the name of the local directory.
+    """
+    return download_files(gold_dir_url, folder_name, suffix='.txt')
+
+
+def download_files(url: str, output_folder=None, suffix=None) -> str:
+    """
+    Download files from the url in the aapb-annotations repository and save them
+    to a local directory. If no output folder is given then the files are saved to
+    a temporary directory. Returns the name of the local directory. The suffix
+    parameter allows the caller to specify whether files need to have a particular
+    suffix.
     """
 
     if output_folder is None:
@@ -41,28 +52,28 @@ def download_batch_files(batch_dir_url: str, output_folder=None) -> str:
         raise Exception(f"The folder '{output_folder}' already exists and is not empty")
 
     # Send a GET request to the repository URL and extract the content
-    response = requests.get(batch_dir_url, headers={"Accept": "application/json"})
+    response = requests.get(url, headers={"Accept": "application/json"})
     try:
         payload = json.loads(response.text)['payload']
-        with open('x.json', 'w') as fh:
-            fh.write(json.dumps(json.loads(response.text), indent=2))
+        #with open('x.json', 'w') as fh:
+        #    fh.write(json.dumps(json.loads(response.text), indent=2))
     except json.JSONDecodeError:
         raise Exception(
-            f"Failed to load the directory URL: {batch_dir_url} . As the gold "
-            "retriever relies on an undocumented API endpoint of GitHub, it may "
-            "be broken. Please report this issue to the developers at "
+            f"Failed to load the directory URL: {url} . As the gold retriever "
+            "relies on an undocumented API endpoint of GitHub, it may be broken. "
+            "Please report this issue to the developers at "
             "https://github.com/clamsproject/clams-utils/issues .")
     batch_files = [
-        item['path'] for item in payload['codeViewTreeRoute']['tree']['items']
-        if item['path'].endswith('.txt')]
+        item['path'] for item in payload['codeViewTreeRoute']['tree']['items']]
+    if suffix is not None:
+        batch_files = [p for p in batch_files if p.endswith(suffix)]
     branch = payload['codeViewTreeRoute']['refInfo']['name']
 
-    # Download each file in the list into the created folder
+    # Download each file in the list into the output folder
     for batch_file in batch_files:
         raw_url = urljoin(
             'https://raw.githubusercontent.com/',
             str(Path('clamsproject') / 'aapb-annotations' / branch / batch_file))
-        print('--', raw_url)
         file_name = os.path.basename(batch_file)
         file_path = os.path.join(output_folder, file_name)
         with open(file_path, 'wb') as file:
@@ -79,7 +90,7 @@ def prep_argparser(subparsers):
         __name__.split('.')[-1],
         description="Download 'gold' release files from a GitHub repository.",
         help="Download 'gold' release files from a GitHub repository.")
-    goldretriever_parser.add_argument("batch_dir_url", help="URL to a directory in a GitHub repository")
+    goldretriever_parser.add_argument("gold_dir_url", help="URL to a directory in a GitHub repository")
     goldretriever_parser.add_argument("-o", "--output-folder", dest="folder_name", help="local folder to store the downloaded files")
     goldretriever_parser.set_defaults(func=main)
 
@@ -88,5 +99,5 @@ def main(args):
     """
     Main function for the goldretriever command.
     """
-    folder = download_golds(args.batch_dir_url, args.folder_name)
+    folder = download_golds(args.gold_dir_url, args.folder_name)
     print(f"Downloaded files to: {folder}")
