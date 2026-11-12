@@ -1,6 +1,6 @@
 """
 
-Downloader for "gold" release files from the aapb-annotation repository.
+Downloader for gold files and batch files from the aapb-annotation repository.
 
 This is somewhat fragile in that the code relies on undocumented API endpoints
 on GitHub.
@@ -9,28 +9,29 @@ on GitHub.
 
 import json
 import os
+import tempfile
 from urllib.parse import urljoin
 from pathlib import Path
+
 import requests
-import tempfile
 
 
-def download_golds(gold_dir_url, folder_name=None):
+def download_golds(gold_dir_url, output_folder=None):
     """
     Download gold files from the aapb-annotations repository and save them to a
     local directory. If no output folder is given then the files are saved to a
     temporary directory. Returns the name of the local directory.
     """
-    return download_files(gold_dir_url, folder_name)
+    return download_files(gold_dir_url, output_folder)
 
 
-def download_batches(gold_dir_url, folder_name=None):
+def download_batches(batch_dir_url, output_folder=None):
     """
     Download batch files from the aapb-annotations repository and save them to a
     local directory. If no output folder is given then the files are saved to a
     temporary directory. Returns the name of the local directory.
     """
-    return download_files(gold_dir_url, folder_name, suffix='.txt')
+    return download_files(batch_dir_url, output_folder, suffix='.txt')
 
 
 def download_files(url: str, output_folder=None, suffix=None) -> str:
@@ -55,8 +56,6 @@ def download_files(url: str, output_folder=None, suffix=None) -> str:
     response = requests.get(url, headers={"Accept": "application/json"})
     try:
         payload = json.loads(response.text)['payload']
-        #with open('x.json', 'w') as fh:
-        #    fh.write(json.dumps(json.loads(response.text), indent=2))
     except json.JSONDecodeError:
         raise Exception(
             f"Failed to load the directory URL: {url} . As the gold retriever "
@@ -101,3 +100,17 @@ def main(args):
     """
     folder = download_golds(args.gold_dir_url, args.folder_name)
     print(f"Downloaded files to: {folder}")
+
+
+def test(output_dir: str):
+    """A quick test on a known not-so-big gold directory."""
+    aapb_annotations = 'https://github.com/clamsproject/aapb-annotations'
+    download_golds(
+        f'{aapb_annotations}/tree/main/projects/newshour-chyron/golds/', output_dir)
+    print(f'Wrote golds to {output_dir}')
+
+
+
+if __name__ == '__main__':
+
+    test('tmp-downloaded-golds')
